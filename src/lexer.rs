@@ -1,3 +1,5 @@
+use std::ops::{Bound, RangeBounds};
+
 use itertools::Itertools;
 
 use crate::token::{BlockToken, BlockType, InlineToken, InlineType};
@@ -52,10 +54,15 @@ impl InlineLexer {
 
     fn process_inline_code(&mut self, end_of_decorator: usize) {
         // inline codeの中身はすべてplain textとして処理したいので別扱い
-        let inline_text = self.text[self.index+1..end_of_decorator-1]
-            .iter()
-            .copied()
-            .collect();
+        let inline_text = if self.index + 1 == end_of_decorator { 
+            "".to_string() 
+        } else { 
+            self.text[self.index+1..end_of_decorator-1]
+                .iter()
+                .copied()
+                .collect()
+        };
+
         let token = InlineToken::new(InlineType::Code, Some(inline_text), None);
         self.tokens.push(token);
         self.index = end_of_decorator;
@@ -176,6 +183,25 @@ impl BlockLexer {
         self.tokens.push(token);
         self.next();
     }
+    
+    fn process_codeblock<R: RangeBounds<usize>>(&mut self, range: R) {
+        let start = match range.start_bound() {
+            Bound::Unbounded => 0,
+            Bound::Excluded(&s) => s + 1,
+            Bound::Included(&s) => s,
+        };
+        let end = match range.end_bound() {
+            Bound::Unbounded => self.content.len(),
+            Bound::Excluded(&t) => t.min(self.content.len()),
+            Bound::Included(&t) => (t + 1).min(self.content.len()),
+        };
+        
+        let code = self.content[start+1..end-1].iter().join("\n");
+        let mut token = BlockToken::new(BlockType::CodeBlock);
+        token.process_block_content_as_plain_text(code);
+        self.tokens.push(token);
+        self.index = end;
+    }
 
     fn consume(&mut self) {
         while self.index < self.content.len() {
@@ -202,6 +228,13 @@ impl BlockLexer {
                 // 多分実用上困らない...はず
                 self.process_hr();
                 continue;
+            } else if self.content[self.index].starts_with("```") {
+                for i in self.index+1..self.content.len() {
+                    if self.content[i].trim_start().starts_with("```") {
+                        // TODO: 言語対応
+                        self.process_codeblock(self.index..=i);
+                    }
+                }
             }
             // 何もないならplainとして処理
             self.process_plain();            

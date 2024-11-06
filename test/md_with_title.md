@@ -10,6 +10,12 @@ koreha line 4(new paragraph)
 ## This is h2
 
 ### This is h3
-inline code test here: `v.iter().join(" ");`
+inline code test here: `v.iter().join(" ");`testetste
+this is no content code: ``aaa
 ---
+```rust
+fn main(){
+    println!("Hello World!");
+}
+```
 this is plain text

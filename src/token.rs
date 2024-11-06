@@ -19,6 +19,7 @@ pub enum BlockType {
     Plain,
     Empty, // 段落替え
     Hr, // 区切り線 
+    CodeBlock,
 }
 
 #[derive(Clone, Debug)]
@@ -88,6 +89,10 @@ impl BlockToken {
             .cloned()
             .collect();
     }
+    
+    pub fn process_block_content_as_plain_text(&mut self, content: String) {
+        self.inline_tokens.push(InlineToken::new(InlineType::Text, Some(content), None));
+    }
 
     pub fn to_html(&self) -> String {
         let content = self.inline_tokens
@@ -101,6 +106,7 @@ impl BlockToken {
             BlockType::Plain => format!("<p>{content}</p>"),
             BlockType::Empty => "<br>".to_string(),
             BlockType::Hr => "<hr>".to_string(),
+            BlockType::CodeBlock => format!("<pre><code>{content}</code></pre>"),
         }
     }
 }
