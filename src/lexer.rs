@@ -122,21 +122,21 @@ impl BlockLexer {
     }
 
     fn process_h1(&mut self) {
-        let mut token = BlockToken::new(crate::token::BlockType::h1);
+        let mut token = BlockToken::new(BlockType::h1);
         token.proceed_block_contest(self.content[self.index][2..].to_string());
         self.tokens.push(token);
         self.next();
     }
 
     fn process_h2(&mut self) {
-        let mut token = BlockToken::new(crate::token::BlockType::h1);
+        let mut token = BlockToken::new(BlockType::h2);
         token.proceed_block_contest(self.content[self.index][3..].to_string());
         self.tokens.push(token);
         self.next();
     }
 
     fn process_h3(&mut self) {
-        let mut token = BlockToken::new(crate::token::BlockType::h1);
+        let mut token = BlockToken::new(BlockType::h3);
         token.proceed_block_contest(self.content[self.index][4..].to_string());
         self.tokens.push(token);
         self.next();
@@ -144,7 +144,7 @@ impl BlockLexer {
 
 
     fn process_empty(&mut self) {
-        let mut token = BlockToken::new(crate::token::BlockType::Empty);
+        let mut token = BlockToken::new(BlockType::Empty);
         token.proceed_block_contest("".to_string());
         self.tokens.push(token);
         // 2つ分の空行を消費したので2回next
