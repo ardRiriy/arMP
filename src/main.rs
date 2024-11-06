@@ -1,6 +1,6 @@
 use std::{env, fs::File, io::Read, process::exit};
 use itertools::Itertools;
-use lexer::{BlockLexer, InlineLexer};
+use lexer::BlockLexer;
 
 mod lexer;
 mod token;
@@ -21,7 +21,6 @@ fn main() {
 
     let linebreaked_content :Vec<String> = content
         .lines()
-        .into_iter()
         .map(|s| s.to_string())
         .collect(); 
     let mut block_lexer = BlockLexer::new(linebreaked_content);

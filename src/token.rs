@@ -33,10 +33,7 @@ impl InlineToken {
         children: Option<Vec<InlineToken>>
     ) -> Self 
     {
-        let children = match children {
-            Some(v) => v,
-            None => Vec::new()
-        };
+        let children = children.unwrap_or_default();
 
         InlineToken { inline_type, text, children }
     }
@@ -79,10 +76,8 @@ impl BlockToken {
         if !self.inline_tokens.is_empty() {
             self.inline_tokens.push(InlineToken::new(InlineType::LineBreak, None, None));
         }
-        self.inline_tokens = vec![
-            self.inline_tokens.clone(), 
-            InlineLexer::new(content.chars().collect()).tokenize(),
-            ].iter()
+        self.inline_tokens = [self.inline_tokens.clone(), 
+            InlineLexer::new(content.chars().collect()).tokenize()].iter()
             .flatten()
             .cloned()
             .collect();
@@ -93,12 +88,12 @@ impl BlockToken {
             .iter()
             .map(|it| it.to_html())
             .join("\n");
-        return match self.block_type {
+        match self.block_type {
             BlockType::h1 => format!("<h1>{content}</h1>"),
             BlockType::h2 => format!("<h2>{content}</h2>"),
             BlockType::h3 => format!("<h3>{content}</h3>"),
             BlockType::Plain => format!("<p>{content}</p>"),
-            BlockType::Empty => format!("<br>"),
+            BlockType::Empty => "<br>".to_string(),
         }
     }
 }
