@@ -163,13 +163,17 @@ impl BlockLexer {
         self.next();
     }
 
-
     fn process_empty(&mut self) {
-        let mut token = BlockToken::new(BlockType::Empty);
-        token.proceed_block_contest("".to_string());
+        let token = BlockToken::new(BlockType::Empty);
         self.tokens.push(token);
         // 2つ分の空行を消費したので2回next
         self.next();
+        self.next();
+    }
+    
+    fn process_hr(&mut self) {
+        let token = BlockToken::new(BlockType::Hr);
+        self.tokens.push(token);
         self.next();
     }
 
@@ -194,8 +198,11 @@ impl BlockLexer {
                     self.next();
                     continue;
                 }
+            } else if self.content[self.index].starts_with("---") {
+                // 多分実用上困らない...はず
+                self.process_hr();
+                continue;
             }
-
             // 何もないならplainとして処理
             self.process_plain();            
         }

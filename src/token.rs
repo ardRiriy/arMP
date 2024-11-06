@@ -18,6 +18,7 @@ pub enum BlockType {
     h3,
     Plain,
     Empty, // 段落替え
+    Hr, // 区切り線 
 }
 
 #[derive(Clone, Debug)]
@@ -99,6 +100,7 @@ impl BlockToken {
             BlockType::h3 => format!("<h3>{content}</h3>"),
             BlockType::Plain => format!("<p>{content}</p>"),
             BlockType::Empty => "<br>".to_string(),
+            BlockType::Hr => "<hr>".to_string(),
         }
     }
 }
