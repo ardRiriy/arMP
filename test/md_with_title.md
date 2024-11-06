@@ -10,5 +10,4 @@ koreha line 4(new paragraph)
 ## This is h2
 
 ### This is h3
-
-疲れたw
+inline code test here: `v.iter().join(" ");`

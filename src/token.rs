@@ -6,6 +6,7 @@ use crate::lexer::InlineLexer;
 pub enum InlineType {
     Text,
     Bold,
+    Code,
     LineBreak,
 }
 
@@ -51,7 +52,11 @@ impl InlineToken {
                     .join("");
                 format!("<strong>{}</strong>", children_html)
             },
-            InlineType::LineBreak => "<br>".to_string()
+            InlineType::LineBreak => "<br>".to_string(),
+            InlineType::Code => {
+                assert!(self.text.is_some());
+                format!("<code>{}</code>", self.text.clone().unwrap())
+            }
         }
     }
 }

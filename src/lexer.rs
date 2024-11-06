@@ -50,6 +50,18 @@ impl InlineLexer {
         self.next();
     }
 
+    fn process_inline_code(&mut self, end_of_decorator: usize) {
+        // inline codeの中身はすべてplain textとして処理したいので別扱い
+        let inline_text = self.text[self.index+1..end_of_decorator-1]
+            .iter()
+            .copied()
+            .collect();
+        let token = InlineToken::new(InlineType::Code, Some(inline_text), None);
+        self.tokens.push(token);
+        self.index = end_of_decorator;
+        self.next();
+    }
+
     fn consume_inline_text(&mut self) {
         'outer: while self.index < self.text.len() {
             match self.text[self.index] {
@@ -68,6 +80,15 @@ impl InlineLexer {
                         }
                     }
                     self.consume_str();
+                }
+                '`' => { // backquote: inline code
+                    for i in self.index+1..self.text.len() {
+                        if self.text[i] == '`' {
+                            self.process_tempary_str();
+                            self.process_inline_code(i);
+                            continue 'outer;
+                        }
+                    }
                 }
                 _ => {
                     self.consume_str();
