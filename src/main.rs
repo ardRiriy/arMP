@@ -1,6 +1,6 @@
 use std::{env, fs::File, io::Read, process::exit};
 use itertools::Itertools;
-use lexer::InlineLexer;
+use lexer::{BlockLexer, InlineLexer};
 
 mod lexer;
 mod token;
@@ -19,13 +19,18 @@ fn main() {
     f.read_to_string(&mut content)
         .expect("cannot read file");
 
-    let mut lexer = InlineLexer::new(content.chars().collect());
-    let tokens = lexer.tokenize();
+    let linebreaked_content :Vec<String> = content
+        .lines()
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect(); 
+    let mut block_lexer = BlockLexer::new(linebreaked_content);
+    let tokens = block_lexer.tokenize();
     dbg!(&tokens);
 
     let html = tokens.iter()
         .map(|elm| elm.to_html())
-        .join("");
+        .join("\n");
 
-    println!("<p>{}</p>", html);
+    println!("{}", html);
 }
