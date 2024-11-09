@@ -299,7 +299,7 @@ impl BlockLexer {
     }
 
     fn consume(&mut self) {
-        while self.index < self.content.len() {
+        'outer: while self.index < self.content.len() {
             if self.content[self.index].starts_with("# ") { // h1
                 self.process_h1();
                 continue;
@@ -328,11 +328,13 @@ impl BlockLexer {
                     if self.content[i].trim_start().starts_with("```") {
                         // TODO: 言語対応
                         self.process_codeblock(self.index..=i);
+                        continue 'outer;
                     }
                 }
             } else if self.content[self.index].starts_with(">") {
                 // 引用
                 self.process_quote();
+                continue;
             }
             // 何もないならplainとして処理
             self.process_plain();
