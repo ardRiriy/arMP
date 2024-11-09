@@ -18,8 +18,9 @@ pub enum BlockType {
     h3,
     Plain,
     Empty, // 段落替え
-    Hr, // 区切り線 
+    Hr, // 区切り線
     CodeBlock,
+    Quote, // 引用
 }
 
 #[derive(Clone, Debug)]
@@ -31,10 +32,10 @@ pub struct InlineToken {
 
 impl InlineToken {
     pub fn new(
-        inline_type: InlineType, 
-        text: Option<String>, 
+        inline_type: InlineType,
+        text: Option<String>,
         children: Option<Vec<InlineToken>>
-    ) -> Self 
+    ) -> Self
     {
         let children = children.unwrap_or_default();
 
@@ -83,13 +84,13 @@ impl BlockToken {
         if !self.inline_tokens.is_empty() {
             self.inline_tokens.push(InlineToken::new(InlineType::LineBreak, None, None));
         }
-        self.inline_tokens = [self.inline_tokens.clone(), 
+        self.inline_tokens = [self.inline_tokens.clone(),
             InlineLexer::new(content.chars().collect()).tokenize()].iter()
             .flatten()
             .cloned()
             .collect();
     }
-    
+
     pub fn process_block_content_as_plain_text(&mut self, content: String) {
         self.inline_tokens.push(InlineToken::new(InlineType::Text, Some(content), None));
     }
@@ -107,6 +108,7 @@ impl BlockToken {
             BlockType::Empty => "<br>".to_string(),
             BlockType::Hr => "<hr>".to_string(),
             BlockType::CodeBlock => format!("<pre><code>{content}</code></pre>"),
+            BlockType::Quote => format!("<blockquote>{content}</blockquote>"),
         }
     }
 }

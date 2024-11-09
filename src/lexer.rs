@@ -33,7 +33,7 @@ impl InlineLexer {
         }
 
         let text = self.temprary.iter().join("");
-        
+
         let token = InlineToken::new(InlineType::Text, Some(text), None);
         self.tokens.push(token);
         self.temprary.clear();
@@ -54,9 +54,9 @@ impl InlineLexer {
 
     fn process_inline_code(&mut self, end_of_decorator: usize) {
         // inline codeの中身はすべてplain textとして処理したいので別扱い
-        let inline_text = if self.index + 1 == end_of_decorator { 
-            "".to_string() 
-        } else { 
+        let inline_text = if self.index + 1 == end_of_decorator {
+            "".to_string()
+        } else {
             self.text[self.index+1..end_of_decorator-1]
                 .iter()
                 .copied()
@@ -115,7 +115,7 @@ impl InlineLexer {
 pub struct BlockLexer {
     tokens: Vec<BlockToken>,
     index: usize,
-    content: Vec<String>, 
+    content: Vec<String>,
 }
 
 impl BlockLexer {
@@ -145,7 +145,7 @@ impl BlockLexer {
             token.proceed_block_contest(self.content[self.index].clone());
             self.tokens.push(token);
         }
-        
+
         self.next();
     }
 
@@ -177,13 +177,13 @@ impl BlockLexer {
         self.next();
         self.next();
     }
-    
+
     fn process_hr(&mut self) {
         let token = BlockToken::new(BlockType::Hr);
         self.tokens.push(token);
         self.next();
     }
-    
+
     fn process_codeblock<R: RangeBounds<usize>>(&mut self, range: R) {
         let start = match range.start_bound() {
             Bound::Unbounded => 0,
@@ -195,12 +195,38 @@ impl BlockLexer {
             Bound::Excluded(&t) => t.min(self.content.len()),
             Bound::Included(&t) => (t + 1).min(self.content.len()),
         };
-        
+
         let code = self.content[start+1..end-1].iter().join("\n");
         let mut token = BlockToken::new(BlockType::CodeBlock);
         token.process_block_content_as_plain_text(code);
         self.tokens.push(token);
         self.index = end;
+    }
+
+    fn process_quote(&mut self) {
+        let mut prev = false; // 直前が>で始まっていたか？
+        let mut quote_content = vec![];
+        for i in self.index..self.content.len() {
+            if self.content[i].is_empty() {
+                // 問答無用で終了
+                self.index = i+1;
+                break;
+            } else if self.content[i].starts_with(">") {
+                quote_content.push(self.content[i][1..].trim().to_string());
+                prev = true;
+            } else if prev {
+                quote_content.push(self.content[i].to_string());
+                prev = false;
+            } else {
+                self.index = i;
+                break;
+            }
+        }
+        let mut token = BlockToken::new(BlockType::Quote);
+        for s in quote_content {
+            token.proceed_block_contest(s);
+        }
+        self.tokens.push(token);
     }
 
     fn consume(&mut self) {
@@ -235,9 +261,12 @@ impl BlockLexer {
                         self.process_codeblock(self.index..=i);
                     }
                 }
+            } else if self.content[self.index].starts_with(">") {
+                // 引用
+                self.process_quote();
             }
             // 何もないならplainとして処理
-            self.process_plain();            
+            self.process_plain();
         }
     }
 

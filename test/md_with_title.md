@@ -19,3 +19,9 @@ fn main(){
 }
 ```
 this is plain text
+
+> This is in the quote.
+This is also in the quote.
+> **This is also.**
+
+This is not in the quote.
