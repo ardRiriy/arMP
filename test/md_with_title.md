@@ -8,6 +8,8 @@ koreha line 3(not new paragraph)
 koreha line 4(new paragraph)
 
 ## This is h2
+this is not strong: \**not strong**
+backslask in plaintext is available!: \\
 
 ### This is h3
 inline code test here: `v.iter().join(" ");`testetste

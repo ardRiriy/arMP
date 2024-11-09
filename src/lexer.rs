@@ -97,6 +97,13 @@ impl InlineLexer {
                         }
                     }
                 }
+                '\\' => { // backslash: 次の文字を強制的にconsumeする。文末にある場合は無視。
+                    if self.index + 1 < self.text.len() {
+                        self.next();
+                        self.consume_str();
+                    }
+
+                }
                 _ => {
                     self.consume_str();
                 }
