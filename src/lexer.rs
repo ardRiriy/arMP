@@ -68,6 +68,57 @@ impl InlineLexer {
         self.index = end_of_decorator;
         self.next();
     }
+    
+    fn process_external_url(&mut self, end_of_decorator: usize) {
+        if self.index + 1 == end_of_decorator {
+            // "[]" という形で中身に何もない場合はtemporaryに突っ込んで終了しておく 空文字列のURLは意味がないので
+            self.temprary.push('[');
+            self.temprary.push(']');
+            self.index = end_of_decorator;
+            self.next();
+        } else {
+            let display_text = self.text[self.index+1..end_of_decorator]
+                .iter()
+                .copied()
+                .join("");
+            // 後続にURLが続くことを期待して処理を続ける
+            // なお、続かない場合はURLを空にして処理をする
+            self.index = end_of_decorator;
+            self.next();
+            let mut end_of_decorator = self.index;
+
+            let mut url = "".to_string();
+            if self.index + 1 < self.text.len() && self.text[self.index] == '(' {
+                for (i, &c) in self.text[self.index+1..].iter().enumerate() {
+                    if c == ')' {
+                        end_of_decorator = self.index+1+i;
+                        if i != 0 {
+                            url = self.text[self.index+1..self.index+1+i].iter()
+                                .copied()
+                                .join("");
+                            break;
+                        }
+                    }
+                }
+            }
+            let token = InlineToken::new(
+                InlineType::Url,
+                Some(display_text),
+                Some(
+                    vec![
+                        InlineToken::new(
+                            InlineType::Text,
+                            Some(url),
+                            None
+                        )
+                    ]
+                )
+             );
+            self.tokens.push(token);
+            self.index = end_of_decorator;
+            self.next();
+        }
+    }
 
     fn consume_inline_text(&mut self) {
         'outer: while self.index < self.text.len() {
@@ -103,6 +154,17 @@ impl InlineLexer {
                         self.consume_str();
                     }
 
+                }
+                '[' => {
+                    // TODO: obsidianの[[]]とURLの[]()で読み替えないといけない
+                    // 一旦外部URLのみをパースする
+                    for i in self.index+1..self.text.len() {
+                        if self.text[i] == ']' {
+                            self.process_tempary_str();
+                            self.process_external_url(i);
+                            continue 'outer;
+                        }
+                    }
                 }
                 _ => {
                     self.consume_str();

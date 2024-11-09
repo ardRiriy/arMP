@@ -25,7 +25,6 @@ fn main() {
         .collect(); 
     let mut block_lexer = BlockLexer::new(linebreaked_content);
     let tokens = block_lexer.tokenize();
-    dbg!(&tokens);
 
     let html = tokens.iter()
         .map(|elm| elm.to_html())

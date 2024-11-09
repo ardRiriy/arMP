@@ -27,3 +27,7 @@ This is also in the quote.
 > **This is also.**
 
 This is not in the quote.
+Follow me!: [my twitter account](https://x.com/ardririy)
+this is url but url is empty : [not url!!]
+this is url but url is empty: [empty url]() hahaha
+this is not url: [](https://x.com/ardririy)

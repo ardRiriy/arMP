@@ -8,6 +8,7 @@ pub enum InlineType {
     Bold,
     Code,
     LineBreak,
+    Url,
 }
 
 #[allow(non_camel_case_types)]
@@ -59,6 +60,14 @@ impl InlineToken {
             InlineType::Code => {
                 assert!(self.text.is_some());
                 format!("<code>{}</code>", self.text.clone().unwrap())
+            },
+            InlineType::Url => {
+                assert!(!self.children.is_empty());
+                assert!(self.children[0].text.is_some());
+                assert!(self.text.is_some());
+                let content = self.text.clone().unwrap();
+                let url = self.children[0].text.clone().unwrap();
+                format!("<a href=\"{url}\">{content}</a>")
             }
         }
     }
