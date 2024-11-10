@@ -1,4 +1,4 @@
-use std::{fmt::format, fs::File, io::{BufRead, BufReader}, ops::{Bound, RangeBounds}};
+use std::{fs::File, io::{BufRead, BufReader}, ops::{Bound, RangeBounds}};
 
 use itertools::Itertools;
 
@@ -173,32 +173,29 @@ impl InlineLexer {
                         if self.text[i] == ']' {
                             if prev {
                                 let mut flag = false; // 対応するurlが存在したか？
-                                match get_path(link.iter().join("")) {
-                                    Some(path) => {
-                                        let file = File::open(path);
-                                        if let Ok(file) = file {
-                                            let reader = BufReader::new(file);
-                                            let first_line = reader.lines().next();
-                                            if let Some(Ok(line)) = first_line {
-                                                if line.starts_with("<!-- url: ") && line.trim().ends_with("-->") {
-                                                    let trimed = line.trim_start_matches("<!-- url:")
-                                                        .trim_end_matches("-->")
-                                                        .trim()
-                                                        .to_string();
-                                                    if trimed != "" {
-                                                        let token = InlineToken::new(
-                                                            InlineType::Url, 
-                                                            Some(link.iter().join("")),
-                                                        Some(vec![InlineToken::new(InlineType::Text, Some(format!("article/{trimed}")), None)])
-                                                        );
-                                                        flag = true;
-                                                        self.tokens.push(token);
-                                                    }
+                                if let Some(path) = get_path(link.iter().join("")) {
+                                    let file = File::open(path);
+                                    if let Ok(file) = file {
+                                        let reader = BufReader::new(file);
+                                        let first_line = reader.lines().next();
+                                        if let Some(Ok(line)) = first_line {
+                                            if line.starts_with("<!-- url: ") && line.trim().ends_with("-->") {
+                                                let trimed = line.trim_start_matches("<!-- url:")
+                                                    .trim_end_matches("-->")
+                                                    .trim()
+                                                    .to_string();
+                                                if !trimed.is_empty() {
+                                                    let token = InlineToken::new(
+                                                        InlineType::Url, 
+                                                        Some(link.iter().join("")),
+                                                    Some(vec![InlineToken::new(InlineType::Text, Some(format!("article/{trimed}")), None)])
+                                                    );
+                                                    flag = true;
+                                                    self.tokens.push(token);
                                                 }
                                             }
                                         }
                                     }
-                                    None => { }
                                 }
                                 if !flag {
                                     // 処理されなかった場合はlink部分をplainなtextにする
