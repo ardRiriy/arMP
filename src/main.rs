@@ -1,7 +1,6 @@
 use std::{env, fs::File, io::Read, process::exit};
 use itertools::Itertools;
 use lexer::BlockLexer;
-use util::get_path;
 
 mod lexer;
 mod token;
@@ -28,8 +27,6 @@ fn main() {
             exit(1);
         }
     }
-    
-    dbg!(get_path("平面走査".to_string()));
 
     let linebreaked_content :Vec<String> = content
         .lines()
