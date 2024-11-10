@@ -119,6 +119,45 @@ impl InlineLexer {
             self.next();
         }
     }
+    
+    fn process_footnote(&mut self, id: String) {
+        let token = InlineToken::new(
+            InlineType::FootNote,
+            Some(id), 
+            None
+        );
+        self.tokens.push(token);
+        self.next();
+    }
+    
+    fn consume_bracket(&mut self) {
+        self.process_tempary_str();
+        // TODO: obsidianの[[]]とURLの[]()と脚注の[^*]で読み替えないといけない
+        if self.index + 1 < self.text.len() {
+            match self.text[self.index + 1] {
+                '^' => {
+                    // この場合は脚注
+                    let mut text = vec![];
+                    for i in self.index+2..self.text.len() {
+                        if self.text[i] == ']' {
+                            assert!(!text.is_empty()); // 対応が面倒くさいのでパースエラーということにしておく
+                            self.index = i;
+                            self.process_footnote(text.iter().join(""));
+                            return;
+                        }
+                        text.push(self.text[i]);
+                    }
+                }
+                _ => { /* 外部URLだと思って次へ飛ばす */}
+            }
+        }
+        
+        for i in self.index+1..self.text.len() {
+            if self.text[i] == ']' {
+                self.process_external_url(i);
+            }
+        }
+    }
 
     fn consume_inline_text(&mut self) {
         'outer: while self.index < self.text.len() {
@@ -156,15 +195,7 @@ impl InlineLexer {
 
                 }
                 '[' => {
-                    // TODO: obsidianの[[]]とURLの[]()で読み替えないといけない
-                    // 一旦外部URLのみをパースする
-                    for i in self.index+1..self.text.len() {
-                        if self.text[i] == ']' {
-                            self.process_tempary_str();
-                            self.process_external_url(i);
-                            continue 'outer;
-                        }
-                    }
+                    self.consume_bracket();
                 }
                 _ => {
                     self.consume_str();
@@ -208,10 +239,10 @@ impl BlockLexer {
         if self.is_same_type(BlockType::Plain) {
             // 直前と同じトークンの場合は同じタイプに入れておく
             let n = self.tokens.len();
-            self.tokens[n - 1].proceed_block_contest(self.content[self.index].clone());
+            self.tokens[n - 1].proceed_block_content(self.content[self.index].clone());
         } else {
             let mut token = BlockToken::new(BlockType::Plain);
-            token.proceed_block_contest(self.content[self.index].clone());
+            token.proceed_block_content(self.content[self.index].clone());
             self.tokens.push(token);
         }
 
@@ -220,21 +251,21 @@ impl BlockLexer {
 
     fn process_h1(&mut self) {
         let mut token = BlockToken::new(BlockType::h1);
-        token.proceed_block_contest(self.content[self.index][2..].to_string());
+        token.proceed_block_content(self.content[self.index][2..].to_string());
         self.tokens.push(token);
         self.next();
     }
 
     fn process_h2(&mut self) {
         let mut token = BlockToken::new(BlockType::h2);
-        token.proceed_block_contest(self.content[self.index][3..].to_string());
+        token.proceed_block_content(self.content[self.index][3..].to_string());
         self.tokens.push(token);
         self.next();
     }
 
     fn process_h3(&mut self) {
         let mut token = BlockToken::new(BlockType::h3);
-        token.proceed_block_contest(self.content[self.index][4..].to_string());
+        token.proceed_block_content(self.content[self.index][4..].to_string());
         self.tokens.push(token);
         self.next();
     }
@@ -293,9 +324,22 @@ impl BlockLexer {
         }
         let mut token = BlockToken::new(BlockType::Quote);
         for s in quote_content {
-            token.proceed_block_contest(s);
+            token.proceed_block_content(s);
         }
         self.tokens.push(token);
+    }
+    
+    fn process_footnote(&mut self) {
+        let v = self.content[self.index].split(':').collect_vec();
+        let id = v[0][2..v[0].len()-1].to_string();
+        let text = v[1..].iter().join(":");
+        
+        let mut token = BlockToken::new(BlockType::FootNote);
+        // 1つ目がid, 2つ目がcontentということにしておく
+        token.process_block_content_as_plain_text(id);
+        token.proceed_block_content(text);
+        self.tokens.push(token);
+        self.next();
     }
 
     fn consume(&mut self) {
@@ -335,6 +379,13 @@ impl BlockLexer {
                 // 引用
                 self.process_quote();
                 continue;
+            } else if self.content[self.index].starts_with("[^") {
+                let v = self.content[self.index].split("]:").collect_vec();
+                if v.len() >= 2 && v[0].len() >= 3 {
+                    // 始まりが[^(一文字以上) で、途中に]:があるのでfootnoteと判断
+                    self.process_footnote();
+                    continue;
+                }
             }
             // 何もないならplainとして処理
             self.process_plain();

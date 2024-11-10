@@ -9,6 +9,7 @@ pub enum InlineType {
     Code,
     LineBreak,
     Url,
+    FootNote,
 }
 
 #[allow(non_camel_case_types)]
@@ -22,6 +23,7 @@ pub enum BlockType {
     Hr, // 区切り線
     CodeBlock,
     Quote, // 引用
+    FootNote,
 }
 
 #[derive(Clone, Debug)]
@@ -68,6 +70,11 @@ impl InlineToken {
                 let content = self.text.clone().unwrap();
                 let url = self.children[0].text.clone().unwrap();
                 format!("<a href=\"{url}\">{content}</a>")
+            },
+            InlineType::FootNote => {
+                assert!(self.text.is_some());
+                let id = self.text.as_ref().unwrap();
+                format!("<span id=\"{id}\"></span>")
             }
         }
     }
@@ -89,7 +96,7 @@ impl BlockToken {
         self.block_type == other
     }
 
-    pub fn proceed_block_contest(&mut self, content: String) {
+    pub fn proceed_block_content(&mut self, content: String) {
         if !self.inline_tokens.is_empty() {
             self.inline_tokens.push(InlineToken::new(InlineType::LineBreak, None, None));
         }
@@ -118,6 +125,12 @@ impl BlockToken {
             BlockType::Hr => "<hr>".to_string(),
             BlockType::CodeBlock => format!("<pre><code>{content}</code></pre>"),
             BlockType::Quote => format!("<blockquote>{content}</blockquote>"),
+            BlockType::FootNote => {
+                assert!(self.inline_tokens.len() >= 3);
+                let id = self.inline_tokens[0].text.clone().unwrap();
+                let text = self.inline_tokens[2].text.clone().unwrap();
+                format!("<foot-note for=\"{id}\">{text}</foot-note>")
+            }
         }
     }
 }
