@@ -117,13 +117,13 @@ impl BlockToken {
             .map(|it| it.to_html())
             .join("\n");
         match self.block_type {
-            BlockType::h1 => format!("<h1>{content}</h1>"),
-            BlockType::h2 => format!("<h2>{content}</h2>"),
-            BlockType::h3 => format!("<h3>{content}</h3>"),
+            BlockType::h1 => format!("<h2>{content}</h2>"),
+            BlockType::h2 => format!("<h3>{content}</h3>"),
+            BlockType::h3 => format!("<h4>{content}</h4>"),
             BlockType::Plain => format!("<p>{content}</p>"),
             BlockType::Empty => "<br>".to_string(),
             BlockType::Hr => "<hr>".to_string(),
-            BlockType::CodeBlock => format!("<pre><code>{content}</code></pre>"),
+            BlockType::CodeBlock => format!("<pre><code class=\"codeblock\">{content}</code></pre>"),
             BlockType::Quote => format!("<blockquote>{content}</blockquote>"),
             BlockType::FootNote => {
                 assert!(self.inline_tokens.len() >= 3);
