@@ -10,6 +10,7 @@ pub enum InlineType {
     LineBreak,
     Url,
     FootNote,
+    Latex,
 }
 
 #[allow(non_camel_case_types)]
@@ -24,6 +25,7 @@ pub enum BlockType {
     CodeBlock,
     Quote, // 引用
     FootNote,
+    Latex,
 }
 
 #[derive(Clone, Debug)]
@@ -75,6 +77,10 @@ impl InlineToken {
                 assert!(self.text.is_some());
                 let id = self.text.as_ref().unwrap();
                 format!("<span id=\"{id}\"></span>")
+            },
+            InlineType::Latex => {
+                assert!(self.text.is_some());
+                format!("\\({}\\)", self.text.as_ref().unwrap())
             }
         }
     }
@@ -130,7 +136,8 @@ impl BlockToken {
                 let id = self.inline_tokens[0].text.clone().unwrap();
                 let text = self.inline_tokens[2].text.clone().unwrap();
                 format!("<foot-note for=\"{id}\">{text}</foot-note>")
-            }
+            },
+            BlockType::Latex => format!("\\[{content}\\]"),
         }
     }
 }

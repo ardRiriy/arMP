@@ -32,4 +32,16 @@ this is url but url is empty : [not url!!]
 this is url but url is empty[^test]: [empty url]() hahaha
 this is not url: [](https://x.com/ardririy)
 
+数式: $E = mc^2$
+
+以下、ABC378Eの式変形。
+$$
+\begin{align}
+\sum_{i=1}^N \sum_{j=i}^N (S_j - S_{i-1})\mod  M &= \sum_{i=1}^N \sum_{j=i}^N S_j - S_{i-1} + \begin{cases} 0 &\text{if } S_j \geq S_{i-1} \\ M & \text{otherwise} \end{cases} \\
+&= \sum_{i=1}^N (\sum_{j=1}^N S_j - \sum_{j=1}^N S_{i-1} + kM )
+\end{align}
+$$
+
+
+
 [^test]: 遷移先のないURLは自身へ戻ってきます。

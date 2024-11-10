@@ -130,6 +130,23 @@ impl InlineLexer {
         self.next();
     }
     
+    fn process_latex(&mut self) {
+        self.process_tempary_str();
+        // 後ろの$を探す
+        for i in self.index+1..self.text.len() {
+            if self.text[i] == '$' {
+                if self.index + 1 != i {
+                    let tex = self.text[self.index+1..i].iter().join("");
+                    let token = InlineToken::new(InlineType::Latex, Some(tex), None);
+                    self.tokens.push(token);
+                    self.index = i;
+                }
+                self.next();
+                return;
+            }
+        }
+    }
+
     fn consume_bracket(&mut self) {
         self.process_tempary_str();
         // TODO: obsidianの[[]]とURLの[]()と脚注の[^*]で読み替えないといけない
@@ -158,7 +175,7 @@ impl InlineLexer {
             }
         }
     }
-
+    
     fn consume_inline_text(&mut self) {
         'outer: while self.index < self.text.len() {
             match self.text[self.index] {
@@ -196,6 +213,10 @@ impl InlineLexer {
                 }
                 '[' => {
                     self.consume_bracket();
+                }
+                '$' => {
+                    // 数式
+                    self.process_latex();
                 }
                 _ => {
                     self.consume_str();
@@ -341,6 +362,15 @@ impl BlockLexer {
         self.tokens.push(token);
         self.next();
     }
+    
+    fn process_latex(&mut self, end: usize) {
+        let latex = self.content[self.index+1..end].iter().join("");
+        let mut token = BlockToken::new(BlockType::Latex);
+        token.process_block_content_as_plain_text(latex);
+        self.tokens.push(token);
+        self.index = end;
+        self.next();
+    }
 
     fn consume(&mut self) {
         'outer: while self.index < self.content.len() {
@@ -370,7 +400,6 @@ impl BlockLexer {
             } else if self.content[self.index].starts_with("```") {
                 for i in self.index+1..self.content.len() {
                     if self.content[i].trim_start().starts_with("```") {
-                        // TODO: 言語対応
                         self.process_codeblock(self.index..=i);
                         continue 'outer;
                     }
@@ -386,6 +415,13 @@ impl BlockLexer {
                     self.process_footnote();
                     continue;
                 }
+            } else if self.content[self.index].starts_with("$$") {
+                for i in self.index+1..self.content.len() {
+                    if self.content[i].trim().ends_with("$$") {
+                        self.process_latex(i);
+                    }
+                }
+                continue;
             }
             // 何もないならplainとして処理
             self.process_plain();
