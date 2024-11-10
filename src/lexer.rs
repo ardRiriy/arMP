@@ -1,8 +1,8 @@
-use std::ops::{Bound, RangeBounds};
+use std::{fmt::format, fs::File, io::{BufRead, BufReader}, ops::{Bound, RangeBounds}};
 
 use itertools::Itertools;
 
-use crate::token::{BlockToken, BlockType, InlineToken, InlineType};
+use crate::{token::{BlockToken, BlockType, InlineToken, InlineType}, util::get_path};
 
 #[derive(Debug)]
 pub struct InlineLexer {
@@ -163,6 +163,56 @@ impl InlineLexer {
                             return;
                         }
                         text.push(self.text[i]);
+                    }
+                }
+                '[' => {
+                    // 後ろに"]]"のテキストがあれば内部リンクで対応
+                    let mut link = vec![];
+                    let mut prev = false; // 直前が]だったか？
+                    for i in self.index+2..self.text.len() {
+                        if self.text[i] == ']' {
+                            if prev {
+                                let mut flag = false; // 対応するurlが存在したか？
+                                match get_path(link.iter().join("")) {
+                                    Some(path) => {
+                                        let file = File::open(path);
+                                        if let Ok(file) = file {
+                                            let reader = BufReader::new(file);
+                                            let first_line = reader.lines().next();
+                                            if let Some(Ok(line)) = first_line {
+                                                if line.starts_with("<!-- url: ") && line.trim().ends_with("-->") {
+                                                    let trimed = line.trim_start_matches("<!-- url:")
+                                                        .trim_end_matches("-->")
+                                                        .trim()
+                                                        .to_string();
+                                                    if trimed != "" {
+                                                        let token = InlineToken::new(
+                                                            InlineType::Url, 
+                                                            Some(link.iter().join("")),
+                                                        Some(vec![InlineToken::new(InlineType::Text, Some(format!("article/{trimed}")), None)])
+                                                        );
+                                                        flag = true;
+                                                        self.tokens.push(token);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    None => { }
+                                }
+                                if !flag {
+                                    // 処理されなかった場合はlink部分をplainなtextにする
+                                    // とはいいつつ、tempraryに突っ込んでおけば後でよしなにしてくれる
+                                    self.temprary.extend(link);
+                                }
+                                self.index = i;
+                                self.next();
+                                return;
+                            }
+                            prev = true;
+                        } else {
+                            link.push(self.text[i]);
+                        }
                     }
                 }
                 _ => { /* 外部URLだと思って次へ飛ばす */}

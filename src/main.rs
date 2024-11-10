@@ -1,9 +1,11 @@
 use std::{env, fs::File, io::Read, process::exit};
 use itertools::Itertools;
 use lexer::BlockLexer;
+use util::get_path;
 
 mod lexer;
 mod token;
+mod util;
 
 fn main() {
     let args :Vec<String> = env::args().collect();
@@ -17,6 +19,17 @@ fn main() {
     let mut content = String::new();
     f.read_to_string(&mut content)
         .expect("cannot read file");
+
+    // 環境変数の登録をチェック
+    match env::var("KNOWLEDGES") {
+        Ok(_) => { }
+        Err(_) => {
+            eprintln!("Error: Environment variable KNOWLEDGES is not set.");
+            exit(1);
+        }
+    }
+    
+    dbg!(get_path("平面走査".to_string()));
 
     let linebreaked_content :Vec<String> = content
         .lines()

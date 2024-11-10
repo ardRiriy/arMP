@@ -34,7 +34,7 @@ this is not url: [](https://x.com/ardririy)
 
 数式: $E = mc^2$
 
-以下、ABC378Eの式変形。
+以下、[ABC378E - Mod Sigma Problem](https://atcoder.jp/contests/abc378/tasks/abc378_e)の式変形。
 $$
 \begin{align}
 \sum_{i=1}^N \sum_{j=i}^N (S_j - S_{i-1})\mod  M &= \sum_{i=1}^N \sum_{j=i}^N S_j - S_{i-1} + \begin{cases} 0 &\text{if } S_j \geq S_{i-1} \\ M & \text{otherwise} \end{cases} \\
@@ -43,5 +43,6 @@ $$
 $$
 
 
+[[平面走査]] ← 内部リンク
 
 [^test]: 遷移先のないURLは自身へ戻ってきます。
