@@ -134,7 +134,7 @@ impl BlockToken {
             BlockType::FootNote => {
                 assert!(self.inline_tokens.len() >= 3);
                 let id = self.inline_tokens[0].text.clone().unwrap();
-                let text = self.inline_tokens[2].text.clone().unwrap();
+                let text = self.inline_tokens[2..].iter().map(|tk| tk.to_html()).join("");
                 format!("<foot-note for=\"{id}\">{text}</foot-note>")
             },
             BlockType::Latex => format!("\\[{content}\\]"),
