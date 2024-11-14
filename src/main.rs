@@ -28,6 +28,8 @@ fn main() {
         }
     }
 
+    let title = args[1].split("/").last().unwrap().trim_end_matches(".md");
+
     let linebreaked_content :Vec<String> = content
         .lines()
         .map(|s| s.to_string())
@@ -39,5 +41,5 @@ fn main() {
         .map(|elm| elm.to_html())
         .join("\n");
 
-    println!("{}", html);
+    println!("<h1>{}</h1>\n{}",title, html);
 }
