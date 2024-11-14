@@ -470,6 +470,10 @@ impl BlockLexer {
                     }
                 }
                 continue;
+            } else if self.content[self.index].trim().starts_with("<!--") && self.content[self.index].trim().ends_with("-->") {
+                // 行単位のコメントアウトはスキップ
+                self.next();
+                continue;
             }
             // 何もないならplainとして処理
             self.process_plain();
