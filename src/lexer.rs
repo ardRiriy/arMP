@@ -68,7 +68,7 @@ impl InlineLexer {
         self.index = end_of_decorator;
         self.next();
     }
-    
+
     fn process_external_url(&mut self, end_of_decorator: usize) {
         if self.index + 1 == end_of_decorator {
             // "[]" という形で中身に何もない場合はtemporaryに突っ込んで終了しておく 空文字列のURLは意味がないので
@@ -119,17 +119,17 @@ impl InlineLexer {
             self.next();
         }
     }
-    
+
     fn process_footnote(&mut self, id: String) {
         let token = InlineToken::new(
             InlineType::FootNote,
-            Some(id), 
+            Some(id),
             None
         );
         self.tokens.push(token);
         self.next();
     }
-    
+
     fn process_latex(&mut self) {
         self.process_tempary_str();
         // 後ろの$を探す
@@ -186,7 +186,7 @@ impl InlineLexer {
                                                     .to_string();
                                                 if !trimed.is_empty() {
                                                     let token = InlineToken::new(
-                                                        InlineType::Url, 
+                                                        InlineType::Url,
                                                         Some(link.iter().join("")),
                                                     Some(vec![InlineToken::new(InlineType::Text, Some(format!("article/{trimed}")), None)])
                                                     );
@@ -215,14 +215,14 @@ impl InlineLexer {
                 _ => { /* 外部URLだと思って次へ飛ばす */}
             }
         }
-        
+
         for i in self.index+1..self.text.len() {
             if self.text[i] == ']' {
                 self.process_external_url(i);
             }
         }
     }
-    
+
     fn consume_inline_text(&mut self) {
         'outer: while self.index < self.text.len() {
             match self.text[self.index] {
@@ -396,12 +396,12 @@ impl BlockLexer {
         }
         self.tokens.push(token);
     }
-    
+
     fn process_footnote(&mut self) {
         let v = self.content[self.index].split(':').collect_vec();
         let id = v[0][2..v[0].len()-1].to_string();
         let text = v[1..].iter().join(":");
-        
+
         let mut token = BlockToken::new(BlockType::FootNote);
         // 1つ目がid, 2つ目がcontentということにしておく
         token.process_block_content_as_plain_text(id);
@@ -409,7 +409,7 @@ impl BlockLexer {
         self.tokens.push(token);
         self.next();
     }
-    
+
     fn process_latex(&mut self, end: usize) {
         let latex = self.content[self.index+1..end].iter().join("");
         let mut token = BlockToken::new(BlockType::Latex);
@@ -468,6 +468,10 @@ impl BlockLexer {
                         self.process_latex(i);
                     }
                 }
+                continue;
+            } else if self.content[self.index].trim().starts_with("<!--") && self.content[self.index].trim().ends_with("-->") {
+                // 行単位のコメントアウトはスキップ
+                self.next();
                 continue;
             }
             // 何もないならplainとして処理
