@@ -219,6 +219,7 @@ impl InlineLexer {
         for i in self.index+1..self.text.len() {
             if self.text[i] == ']' {
                 self.process_external_url(i);
+                break;
             }
         }
     }

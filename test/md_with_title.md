@@ -32,6 +32,8 @@ this is url but url is empty : [not url!!]
 this is url but url is empty[^test]: [empty url]() hahaha
 this is not url: [](https://x.com/ardririy)
 
+([hoge](https://x.com/ardririy))aiueoaiueo
+
 数式: $E = mc^2$
 
 以下、[ABC378E - Mod Sigma Problem](https://atcoder.jp/contests/abc378/tasks/abc378_e)の式変形。
