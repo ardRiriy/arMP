@@ -63,7 +63,7 @@ impl InlineToken {
             InlineType::LineBreak => "<br>".to_string(),
             InlineType::Code => {
                 assert!(self.text.is_some());
-                format!("<code>{}</code>", self.text.clone().unwrap())
+                format!("<code class=\"inline-code\">{}</code>", self.text.clone().unwrap())
             },
             InlineType::Url => {
                 assert!(!self.children.is_empty());
