@@ -147,6 +147,14 @@ impl InlineLexer {
         }
     }
 
+    fn process_picture(&mut self, end_of_decorator: usize, path: String) {
+        self.process_tempary_str();
+        let token = InlineToken::new(InlineType::Picture, Some(path), None);
+        self.tokens.push(token);
+        self.index = end_of_decorator;
+        self.next();
+    }
+
     fn consume_bracket(&mut self) {
         self.process_tempary_str();
         // TODO: obsidianの[[]]とURLの[]()と脚注の[^*]で読み替えないといけない
@@ -265,6 +273,19 @@ impl InlineLexer {
                 '$' => {
                     // 数式
                     self.process_latex();
+                }
+                '!' => {
+                    // 画像
+                    if self.index+2 < self.text.len() && self.text[self.index+1] == '[' && self.text[self.index+2] == '[' {
+                        let mut path = vec![];
+                        for i in  self.index+3..self.text.len()-1 {
+                            if self.text[i] == ']' && self.text[i+1] == ']' {
+                                self.process_picture(i+1, path.iter().join(""));
+                            } else {
+                                path.push(self.text[i]);
+                            }
+                        }
+                    }
                 }
                 _ => {
                     self.consume_str();

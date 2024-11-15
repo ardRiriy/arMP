@@ -11,6 +11,7 @@ pub enum InlineType {
     Url,
     FootNote,
     Latex,
+    Picture,
 }
 
 #[allow(non_camel_case_types)]
@@ -63,14 +64,14 @@ impl InlineToken {
             InlineType::LineBreak => "<br>".to_string(),
             InlineType::Code => {
                 assert!(self.text.is_some());
-                format!("<code class=\"inline-code\">{}</code>", self.text.clone().unwrap())
+                format!("<code class=\"inline-code\">{}</code>", self.text.as_ref().unwrap())
             },
             InlineType::Url => {
                 assert!(!self.children.is_empty());
                 assert!(self.children[0].text.is_some());
                 assert!(self.text.is_some());
                 let content = self.text.clone().unwrap();
-                let url = self.children[0].text.clone().unwrap();
+                let url = self.children[0].text.as_ref().unwrap();
                 format!("<a href=\"{url}\">{content}</a>")
             },
             InlineType::FootNote => {
@@ -81,6 +82,10 @@ impl InlineToken {
             InlineType::Latex => {
                 assert!(self.text.is_some());
                 format!("\\({}\\)", self.text.as_ref().unwrap())
+            },
+            InlineType::Picture => {
+                assert!(self.text.is_some());
+                format!("<img src=\"{}\" />", self.text.as_ref().unwrap())
             }
         }
     }
