@@ -281,10 +281,14 @@ impl InlineLexer {
                         for i in  self.index+3..self.text.len()-1 {
                             if self.text[i] == ']' && self.text[i+1] == ']' {
                                 self.process_picture(i+1, path.iter().join(""));
+                                continue 'outer;
                             } else {
                                 path.push(self.text[i]);
                             }
                         }
+                        self.consume_str();
+                    } else {
+                        self.consume_str();
                     }
                 }
                 _ => {
@@ -443,6 +447,7 @@ impl BlockLexer {
 
     fn consume(&mut self) {
         'outer: while self.index < self.content.len() {
+
             if self.content[self.index].starts_with("# ") { // h1
                 self.process_h1();
                 continue;
