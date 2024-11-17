@@ -1,20 +1,32 @@
-use std::{fs::File, io::{BufRead, BufReader}, ops::{Bound, RangeBounds}};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+    ops::{Bound, RangeBounds},
+};
 
 use itertools::Itertools;
 
-use crate::{token::{BlockToken, BlockType, InlineToken, InlineType}, util::get_path};
+use crate::{
+    token::{BlockToken, BlockType, InlineToken, InlineType},
+    util::get_path,
+};
 
 #[derive(Debug)]
 pub struct InlineLexer {
     text: Vec<char>,
-    temprary: Vec<char>, // consumeしたtextをおいておく
+    temprary: Vec<char>,      // consumeしたtextをおいておく
     tokens: Vec<InlineToken>, // Token列
     index: usize,
 }
 
 impl InlineLexer {
     pub fn new(text: Vec<char>) -> Self {
-        InlineLexer { text, temprary: Vec::new(), tokens: Vec::new(), index: 0 }
+        InlineLexer {
+            text,
+            temprary: Vec::new(),
+            tokens: Vec::new(),
+            index: 0,
+        }
     }
 
     fn next(&mut self) {
@@ -40,11 +52,14 @@ impl InlineLexer {
     }
 
     // Bold(e.g. **hoge**)等のdecoratorが複数ある場合にindexがずれないようにend_of_decoratorを指定する
-    fn process_decorator(&mut self, inline_type: InlineType ,l: usize, r: usize, end_of_decorator: usize) {
-        let inline_text = self.text[l..r]
-            .iter()
-            .copied()
-            .collect_vec();
+    fn process_decorator(
+        &mut self,
+        inline_type: InlineType,
+        l: usize,
+        r: usize,
+        end_of_decorator: usize,
+    ) {
+        let inline_text = self.text[l..r].iter().copied().collect_vec();
         let children = InlineLexer::new(inline_text).tokenize();
         let token = InlineToken::new(inline_type, None, Some(children));
         self.tokens.push(token);
@@ -57,7 +72,7 @@ impl InlineLexer {
         let inline_text = if self.index + 1 == end_of_decorator {
             "".to_string()
         } else {
-            self.text[self.index+1..end_of_decorator]
+            self.text[self.index + 1..end_of_decorator]
                 .iter()
                 .copied()
                 .collect()
@@ -77,7 +92,7 @@ impl InlineLexer {
             self.index = end_of_decorator;
             self.next();
         } else {
-            let display_text = self.text[self.index+1..end_of_decorator]
+            let display_text = self.text[self.index + 1..end_of_decorator]
                 .iter()
                 .copied()
                 .join("");
@@ -89,11 +104,12 @@ impl InlineLexer {
 
             let mut url = "".to_string();
             if self.index + 1 < self.text.len() && self.text[self.index] == '(' {
-                for (i, &c) in self.text[self.index+1..].iter().enumerate() {
+                for (i, &c) in self.text[self.index + 1..].iter().enumerate() {
                     if c == ')' {
-                        end_of_decorator = self.index+1+i;
+                        end_of_decorator = self.index + 1 + i;
                         if i != 0 {
-                            url = self.text[self.index+1..self.index+1+i].iter()
+                            url = self.text[self.index + 1..self.index + 1 + i]
+                                .iter()
                                 .copied()
                                 .join("");
                             break;
@@ -104,16 +120,8 @@ impl InlineLexer {
             let token = InlineToken::new(
                 InlineType::Url,
                 Some(display_text),
-                Some(
-                    vec![
-                        InlineToken::new(
-                            InlineType::Text,
-                            Some(url),
-                            None
-                        )
-                    ]
-                )
-             );
+                Some(vec![InlineToken::new(InlineType::Text, Some(url), None)]),
+            );
             self.tokens.push(token);
             self.index = end_of_decorator;
             self.next();
@@ -121,11 +129,7 @@ impl InlineLexer {
     }
 
     fn process_footnote(&mut self, id: String) {
-        let token = InlineToken::new(
-            InlineType::FootNote,
-            Some(id),
-            None
-        );
+        let token = InlineToken::new(InlineType::FootNote, Some(id), None);
         self.tokens.push(token);
         self.next();
     }
@@ -133,10 +137,10 @@ impl InlineLexer {
     fn process_latex(&mut self) {
         self.process_tempary_str();
         // 後ろの$を探す
-        for i in self.index+1..self.text.len() {
+        for i in self.index + 1..self.text.len() {
             if self.text[i] == '$' {
                 if self.index + 1 != i {
-                    let tex = self.text[self.index+1..i].iter().join("");
+                    let tex = self.text[self.index + 1..i].iter().join("");
                     let token = InlineToken::new(InlineType::Latex, Some(tex), None);
                     self.tokens.push(token);
                     self.index = i;
@@ -163,7 +167,7 @@ impl InlineLexer {
                 '^' => {
                     // この場合は脚注
                     let mut text = vec![];
-                    for i in self.index+2..self.text.len() {
+                    for i in self.index + 2..self.text.len() {
                         if self.text[i] == ']' {
                             assert!(!text.is_empty()); // 対応が面倒くさいのでパースエラーということにしておく
                             self.index = i;
@@ -177,7 +181,7 @@ impl InlineLexer {
                     // 後ろに"]]"のテキストがあれば内部リンクで対応
                     let mut link = vec![];
                     let mut prev = false; // 直前が]だったか？
-                    for i in self.index+2..self.text.len() {
+                    for i in self.index + 2..self.text.len() {
                         if self.text[i] == ']' {
                             if prev {
                                 let mut flag = false; // 対応するurlが存在したか？
@@ -187,8 +191,11 @@ impl InlineLexer {
                                         let reader = BufReader::new(file);
                                         let first_line = reader.lines().next();
                                         if let Some(Ok(line)) = first_line {
-                                            if line.starts_with("<!-- url: ") && line.trim().ends_with("-->") {
-                                                let trimed = line.trim_start_matches("<!-- url:")
+                                            if line.starts_with("<!-- url: ")
+                                                && line.trim().ends_with("-->")
+                                            {
+                                                let trimed = line
+                                                    .trim_start_matches("<!-- url:")
                                                     .trim_end_matches("-->")
                                                     .trim()
                                                     .to_string();
@@ -196,7 +203,11 @@ impl InlineLexer {
                                                     let token = InlineToken::new(
                                                         InlineType::Url,
                                                         Some(link.iter().join("")),
-                                                    Some(vec![InlineToken::new(InlineType::Text, Some(format!("article/{trimed}")), None)])
+                                                        Some(vec![InlineToken::new(
+                                                            InlineType::Text,
+                                                            Some(format!("article/{trimed}")),
+                                                            None,
+                                                        )]),
                                                     );
                                                     flag = true;
                                                     self.tokens.push(token);
@@ -220,11 +231,11 @@ impl InlineLexer {
                         }
                     }
                 }
-                _ => { /* 外部URLだと思って次へ飛ばす */}
+                _ => { /* 外部URLだと思って次へ飛ばす */ }
             }
         }
 
-        for i in self.index+1..self.text.len() {
+        for i in self.index + 1..self.text.len() {
             if self.text[i] == ']' {
                 self.process_external_url(i);
                 break;
@@ -238,21 +249,22 @@ impl InlineLexer {
                 '*' => {
                     if self.index + 1 < self.text.len() && self.text[self.index + 1] == '*' {
                         // index + 2から最後まで、**となっている箇所があるかを判定
-                        for i in self.index+2..self.text.len()-1 {
-                            if self.text[i] == '*' && self.text[i+1] == '*' {
+                        for i in self.index + 2..self.text.len() - 1 {
+                            if self.text[i] == '*' && self.text[i + 1] == '*' {
                                 // temporaryをここで処理をしてしまう
                                 self.process_tempary_str();
 
                                 // [self.index+2, i)の区間を取り出して、その区間をLexerに掛ける
-                                self.process_decorator(InlineType::Bold, self.index+2, i, i+1);
+                                self.process_decorator(InlineType::Bold, self.index + 2, i, i + 1);
                                 continue 'outer;
                             }
                         }
                     }
                     self.consume_str();
                 }
-                '`' => { // backquote: inline code
-                    for i in self.index+1..self.text.len() {
+                '`' => {
+                    // backquote: inline code
+                    for i in self.index + 1..self.text.len() {
                         if self.text[i] == '`' {
                             self.process_tempary_str();
                             self.process_inline_code(i);
@@ -260,12 +272,12 @@ impl InlineLexer {
                         }
                     }
                 }
-                '\\' => { // backslash: 次の文字を強制的にconsumeする。文末にある場合は無視。
+                '\\' => {
+                    // backslash: 次の文字を強制的にconsumeする。文末にある場合は無視。
                     if self.index + 1 < self.text.len() {
                         self.next();
                         self.consume_str();
                     }
-
                 }
                 '[' => {
                     self.consume_bracket();
@@ -276,11 +288,14 @@ impl InlineLexer {
                 }
                 '!' => {
                     // 画像
-                    if self.index+2 < self.text.len() && self.text[self.index+1] == '[' && self.text[self.index+2] == '[' {
+                    if self.index + 2 < self.text.len()
+                        && self.text[self.index + 1] == '['
+                        && self.text[self.index + 2] == '['
+                    {
                         let mut path = vec![];
-                        for i in  self.index+3..self.text.len()-1 {
-                            if self.text[i] == ']' && self.text[i+1] == ']' {
-                                self.process_picture(i+1, path.iter().join(""));
+                        for i in self.index + 3..self.text.len() - 1 {
+                            if self.text[i] == ']' && self.text[i + 1] == ']' {
+                                self.process_picture(i + 1, path.iter().join(""));
                                 continue 'outer;
                             } else {
                                 path.push(self.text[i]);
@@ -314,7 +329,11 @@ pub struct BlockLexer {
 
 impl BlockLexer {
     pub fn new(content: Vec<String>) -> Self {
-        Self { content, index: 0, tokens: Vec::new() }
+        Self {
+            content,
+            index: 0,
+            tokens: Vec::new(),
+        }
     }
 
     fn is_same_type(&self, other: BlockType) -> bool {
@@ -390,7 +409,7 @@ impl BlockLexer {
             Bound::Included(&t) => (t + 1).min(self.content.len()),
         };
 
-        let code = self.content[start+1..end-1].iter().join("\n");
+        let code = self.content[start + 1..end - 1].iter().join("\n");
         let mut token = BlockToken::new(BlockType::CodeBlock);
         token.process_block_content_as_plain_text(code);
         self.tokens.push(token);
@@ -403,7 +422,7 @@ impl BlockLexer {
         for i in self.index..self.content.len() {
             if self.content[i].is_empty() {
                 // 問答無用で終了
-                self.index = i+1;
+                self.index = i + 1;
                 break;
             } else if self.content[i].starts_with(">") {
                 quote_content.push(self.content[i][1..].trim().to_string());
@@ -425,7 +444,7 @@ impl BlockLexer {
 
     fn process_footnote(&mut self) {
         let v = self.content[self.index].split(':').collect_vec();
-        let id = v[0][2..v[0].len()-1].to_string();
+        let id = v[0][2..v[0].len() - 1].to_string();
         let text = v[1..].iter().join(":");
 
         let mut token = BlockToken::new(BlockType::FootNote);
@@ -437,7 +456,7 @@ impl BlockLexer {
     }
 
     fn process_latex(&mut self, end: usize) {
-        let latex = self.content[self.index+1..end].iter().join("");
+        let latex = self.content[self.index + 1..end].iter().join("");
         let mut token = BlockToken::new(BlockType::Latex);
         token.process_block_content_as_plain_text(latex);
         self.tokens.push(token);
@@ -447,14 +466,16 @@ impl BlockLexer {
 
     fn consume(&mut self) {
         'outer: while self.index < self.content.len() {
-
-            if self.content[self.index].starts_with("# ") { // h1
+            if self.content[self.index].starts_with("# ") {
+                // h1
                 self.process_h1();
                 continue;
-            } else if self.content[self.index].starts_with("## ") { // h2
+            } else if self.content[self.index].starts_with("## ") {
+                // h2
                 self.process_h2();
                 continue;
-            } else if self.content[self.index].starts_with("### ") { // h3
+            } else if self.content[self.index].starts_with("### ") {
+                // h3
                 self.process_h3();
                 continue;
             } else if self.content[self.index].is_empty() {
@@ -472,7 +493,7 @@ impl BlockLexer {
                 self.process_hr();
                 continue;
             } else if self.content[self.index].starts_with("```") {
-                for i in self.index+1..self.content.len() {
+                for i in self.index + 1..self.content.len() {
                     if self.content[i].trim_start().starts_with("```") {
                         self.process_codeblock(self.index..=i);
                         continue 'outer;
@@ -490,13 +511,15 @@ impl BlockLexer {
                     continue;
                 }
             } else if self.content[self.index].starts_with("$$") {
-                for i in self.index+1..self.content.len() {
+                for i in self.index + 1..self.content.len() {
                     if self.content[i].trim().ends_with("$$") {
                         self.process_latex(i);
                     }
                 }
                 continue;
-            } else if self.content[self.index].trim().starts_with("<!--") && self.content[self.index].trim().ends_with("-->") {
+            } else if self.content[self.index].trim().starts_with("<!--")
+                && self.content[self.index].trim().ends_with("-->")
+            {
                 // 行単位のコメントアウトはスキップ
                 self.next();
                 continue;
