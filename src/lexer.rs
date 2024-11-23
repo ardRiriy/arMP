@@ -397,7 +397,7 @@ impl BlockLexer {
         self.next();
     }
 
-    fn process_codeblock<R: RangeBounds<usize>>(&mut self, range: R) {
+    fn process_codeblock<R: RangeBounds<usize>>(&mut self, range: R, language: String) {
         let start = match range.start_bound() {
             Bound::Unbounded => 0,
             Bound::Excluded(&s) => s + 1,
@@ -412,6 +412,8 @@ impl BlockLexer {
         let code = self.content[start + 1..end - 1].iter().join("\n");
         let mut token = BlockToken::new(BlockType::CodeBlock);
         token.process_block_content_as_plain_text(code);
+        token.process_block_content_as_plain_text(language);
+        
         self.tokens.push(token);
         self.index = end;
     }
@@ -493,9 +495,10 @@ impl BlockLexer {
                 self.process_hr();
                 continue;
             } else if self.content[self.index].starts_with("```") {
-                for i in self.index + 1..self.content.len() {
+                let language = self.content[self.index].split_off(3);
+                for i in self.index+1..self.content.len() {
                     if self.content[i].trim_start().starts_with("```") {
-                        self.process_codeblock(self.index..=i);
+                        self.process_codeblock(self.index..=i, language);
                         continue 'outer;
                     }
                 }
