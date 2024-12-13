@@ -96,7 +96,7 @@ impl BlockLexer {
         let mut token = BlockToken::new(BlockType::CodeBlock);
         token.process_block_content_as_plain_text(code);
         token.process_block_content_as_plain_text(language);
-        
+
         self.tokens.push(token);
         self.index = end;
     }
@@ -179,7 +179,7 @@ impl BlockLexer {
                 continue;
             } else if self.content[self.index].starts_with("```") {
                 let language = self.content[self.index].split_off(3);
-                for i in self.index+1..self.content.len() {
+                for i in self.index + 1..self.content.len() {
                     if self.content[i].trim_start().starts_with("```") {
                         self.process_codeblock(self.index..=i, language);
                         continue 'outer;

@@ -1,13 +1,12 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader},
-    ops::{Bound, RangeBounds},
 };
 
 use itertools::Itertools;
 
 use crate::{
-    token::{BlockToken, BlockType, InlineToken, InlineType},
+    token::{InlineToken, InlineType},
     util::get_path,
 };
 

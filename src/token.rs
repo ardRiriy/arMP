@@ -2,7 +2,6 @@ use itertools::Itertools;
 
 use crate::lexer::inline_lexer::InlineLexer;
 
-
 #[derive(Clone, Copy, Debug)]
 pub enum InlineType {
     Text,
@@ -23,7 +22,7 @@ pub enum BlockType {
     h3,
     Plain,
     Empty, // 段落替え
-    Hr, // 区切り線
+    Hr,    // 区切り線
     CodeBlock,
     Quote, // 引用
     FootNote,
@@ -41,12 +40,15 @@ impl InlineToken {
     pub fn new(
         inline_type: InlineType,
         text: Option<String>,
-        children: Option<Vec<InlineToken>>
-    ) -> Self
-    {
+        children: Option<Vec<InlineToken>>,
+    ) -> Self {
         let children = children.unwrap_or_default();
 
-        InlineToken { inline_type, text, children }
+        InlineToken {
+            inline_type,
+            text,
+            children,
+        }
     }
 
     pub fn to_html(&self) -> String {
@@ -54,19 +56,19 @@ impl InlineToken {
             InlineType::Text => {
                 assert!(self.text.is_some());
                 self.text.clone().unwrap()
-            },
+            }
             InlineType::Bold => {
-                let children_html = self.children
-                    .iter()
-                    .map(|elm| elm.to_html())
-                    .join("");
+                let children_html = self.children.iter().map(|elm| elm.to_html()).join("");
                 format!("<strong>{}</strong>", children_html)
-            },
+            }
             InlineType::LineBreak => "<br>".to_string(),
             InlineType::Code => {
                 assert!(self.text.is_some());
-                format!("<code class=\"inline-code\">{}</code>", self.text.as_ref().unwrap())
-            },
+                format!(
+                    "<code class=\"inline-code\">{}</code>",
+                    self.text.as_ref().unwrap()
+                )
+            }
             InlineType::Url => {
                 assert!(!self.children.is_empty());
                 assert!(self.children[0].text.is_some());
@@ -74,24 +76,26 @@ impl InlineToken {
                 let content = self.text.clone().unwrap();
                 let url = self.children[0].text.as_ref().unwrap();
                 format!("<a href=\"{url}\">{content}</a>")
-            },
+            }
             InlineType::FootNote => {
                 assert!(self.text.is_some());
                 let id = self.text.as_ref().unwrap();
                 format!("<span id=\"{id}\"></span>")
-            },
+            }
             InlineType::Latex => {
                 assert!(self.text.is_some());
                 format!("\\({}\\)", self.text.as_ref().unwrap())
-            },
+            }
             InlineType::Picture => {
                 assert!(self.text.is_some());
-                format!("<img src=/assets/pictures/\"{}\" />", self.text.as_ref().unwrap())
+                format!(
+                    "<img src=/assets/pictures/\"{}\" />",
+                    self.text.as_ref().unwrap()
+                )
             }
         }
     }
 }
-
 
 #[derive(Clone, Debug)]
 pub struct BlockToken {
@@ -101,7 +105,10 @@ pub struct BlockToken {
 
 impl BlockToken {
     pub fn new(block_type: BlockType) -> Self {
-        Self { block_type, inline_tokens: Vec::new() }
+        Self {
+            block_type,
+            inline_tokens: Vec::new(),
+        }
     }
 
     pub fn is_same_type(&self, other: BlockType) -> bool {
@@ -110,24 +117,26 @@ impl BlockToken {
 
     pub fn proceed_block_content(&mut self, content: String) {
         if !self.inline_tokens.is_empty() {
-            self.inline_tokens.push(InlineToken::new(InlineType::LineBreak, None, None));
+            self.inline_tokens
+                .push(InlineToken::new(InlineType::LineBreak, None, None));
         }
-        self.inline_tokens = [self.inline_tokens.clone(),
-            InlineLexer::new(content.chars().collect()).tokenize()].iter()
-            .flatten()
-            .cloned()
-            .collect();
+        self.inline_tokens = [
+            self.inline_tokens.clone(),
+            InlineLexer::new(content.chars().collect()).tokenize(),
+        ]
+        .iter()
+        .flatten()
+        .cloned()
+        .collect();
     }
 
     pub fn process_block_content_as_plain_text(&mut self, content: String) {
-        self.inline_tokens.push(InlineToken::new(InlineType::Text, Some(content), None));
+        self.inline_tokens
+            .push(InlineToken::new(InlineType::Text, Some(content), None));
     }
 
     pub fn to_html(&self) -> String {
-        let content = self.inline_tokens
-            .iter()
-            .map(|it| it.to_html())
-            .join("\n");
+        let content = self.inline_tokens.iter().map(|it| it.to_html()).join("\n");
         match self.block_type {
             BlockType::h1 => format!("<h2>{content}</h2>"),
             BlockType::h2 => format!("<h3>{content}</h3>"),
@@ -140,14 +149,17 @@ impl BlockToken {
                 let content = self.inline_tokens[0].to_html();
                 let language = self.inline_tokens[1].to_html();
                 format!("<pre><code class=\"codeblock language-{language}\">{content}</code></pre>")
-            }            
+            }
             BlockType::Quote => format!("<blockquote>{content}</blockquote>"),
             BlockType::FootNote => {
                 assert!(self.inline_tokens.len() >= 3);
                 let id = self.inline_tokens[0].text.clone().unwrap();
-                let text = self.inline_tokens[2..].iter().map(|tk| tk.to_html()).join("");
+                let text = self.inline_tokens[2..]
+                    .iter()
+                    .map(|tk| tk.to_html())
+                    .join("");
                 format!("<foot-note for=\"{id}\">{text}</foot-note>")
-            },
+            }
             BlockType::Latex => format!("\\[{content}\\]"),
         }
     }
