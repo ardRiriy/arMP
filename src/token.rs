@@ -146,8 +146,11 @@ impl BlockToken {
             BlockType::Hr => "<hr>".to_string(),
             BlockType::CodeBlock => {
                 assert_eq!(self.inline_tokens.len(), 2);
-                let content = self.inline_tokens[0].to_html();
+                let content = self.inline_tokens[0].to_html()
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;");
                 let language = self.inline_tokens[1].to_html();
+
                 format!("<pre><code class=\"codeblock language-{language}\">{content}</code></pre>")
             }
             BlockType::Quote => format!("<blockquote>{content}</blockquote>"),
