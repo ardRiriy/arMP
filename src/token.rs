@@ -89,7 +89,7 @@ impl InlineToken {
             InlineType::Picture => {
                 assert!(self.text.is_some());
                 format!(
-                    "<img src=/assets/pictures/\"{}\" />",
+                    "<img src=/assets/pictures/{} />",
                     self.text.as_ref().unwrap()
                 )
             }
