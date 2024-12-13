@@ -1,6 +1,7 @@
 use itertools::Itertools;
 
-use crate::lexer::InlineLexer;
+use crate::lexer::inline_lexer::InlineLexer;
+
 
 #[derive(Clone, Copy, Debug)]
 pub enum InlineType {

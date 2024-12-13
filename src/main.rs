@@ -1,6 +1,7 @@
-use itertools::Itertools;
-use lexer::BlockLexer;
 use std::{env, fs::File, io::Read, process::exit};
+
+use itertools::Itertools;
+use lexer::block_lexer::BlockLexer;
 
 mod lexer;
 mod token;
