@@ -144,6 +144,7 @@ impl BlockLexer {
         let latex = self.content[self.index + 1..end].iter().join("");
         let mut token = BlockToken::new(BlockType::Latex);
         token.process_block_content_as_plain_text(latex);
+        dbg!(&token);
         self.tokens.push(token);
         self.index = end;
         self.next();
@@ -200,6 +201,7 @@ impl BlockLexer {
                 for i in self.index + 1..self.content.len() {
                     if self.content[i].trim().ends_with("$$") {
                         self.process_latex(i);
+                        break;
                     }
                 }
                 continue;
