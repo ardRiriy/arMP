@@ -204,7 +204,7 @@ impl InlineLexer {
                                                         Some(link.iter().join("")),
                                                         Some(vec![InlineToken::new(
                                                             InlineType::Text,
-                                                            Some(format!("article/{trimed}")),
+                                                            Some(format!("{trimed}")),
                                                             None,
                                                         )]),
                                                     );
